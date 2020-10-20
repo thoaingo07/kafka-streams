@@ -13,7 +13,7 @@ namespace producers
             Console.WriteLine("Hello Kafka Producers");
             var config = new ProducerConfig
             {
-                BootstrapServers = "localhost:9092"
+                BootstrapServers = "127.0.0.1:9092"
             };
 
             // Create a producer that can be used to send messages to kafka that have no key and a value of type string 
@@ -28,9 +28,6 @@ namespace producers
                     Value = $"{DateTime.Now.ToString("ddd hh:mm:ss")} Message #{++i}",
                     Key = DateTime.UtcNow.Ticks
                 };
-
-
-
                 // Send the message to our test topic in Kafka                
                 var dr = await p.ProduceAsync(topic, message);
                 Console.WriteLine($"Produced message '{dr.Value}' to topic {dr.Topic}, partition {dr.Partition}, offset {dr.Offset}");

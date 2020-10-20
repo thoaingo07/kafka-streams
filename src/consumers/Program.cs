@@ -32,27 +32,31 @@ namespace consumers
 
             using (var consumer = new ConsumerBuilder<long, string>(conf).Build())
             {
-              
+
                 CancellationTokenSource cts = new CancellationTokenSource();
                 Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
 
                 consumer.Subscribe(topic);
-                Console.WriteLine("Consuming messages from topic: " + topic );
-                while (true)
+                Console.WriteLine("Consuming messages from topic: " + topic);
+
+                try
                 {
-                    try
+                    while (true)
                     {
-                        var msg = consumer.Consume(cts.Token);
-                        Console.WriteLine($"Received: '{msg.Message.Value}'");
+                        try
+                        {
+                            var cr = consumer.Consume(cts.Token);
+                            Console.WriteLine($"Consumed message '{cr.Message.Value}' at: '{cr.TopicPartitionOffset}'.");
+                        }
+                        catch (ConsumeException e)
+                        {
+                            Console.WriteLine($"Error occured: {e.Error.Reason}");
+                        }
                     }
-                    catch (ConsumeException e)
-                    {
-                        Console.WriteLine($"Consume error: {e.Error.Reason}");
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine($"Error: {e.Message}");
-                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    consumer.Close();
                 }
             }
         }
