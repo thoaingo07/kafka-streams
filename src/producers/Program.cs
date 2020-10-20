@@ -17,16 +17,19 @@ namespace producers
             };
 
             // Create a producer that can be used to send messages to kafka that have no key and a value of type string 
-            using var p = new ProducerBuilder<Null, string>(config).Build();
+            using var p = new ProducerBuilder<long, string>(config).Build();
 
             var i = 0;
             while (true)
             {
                 // Construct the message to send (generic type must match what was used above when creating the producer)
-                var message = new Message<Null, string>
+                var message = new Message<long, string>
                 {
-                    Value = $"{DateTime.Now.ToString("ddd hh:mm:ss")} Message #{++i}"
+                    Value = $"{DateTime.Now.ToString("ddd hh:mm:ss")} Message #{++i}",
+                    Key = DateTime.UtcNow.Ticks
                 };
+
+
 
                 // Send the message to our test topic in Kafka                
                 var dr = await p.ProduceAsync(topic, message);

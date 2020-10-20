@@ -1,9 +1,6 @@
 ﻿using Confluent.Kafka;
-using Microsoft.Extensions.Configuration;
 using System;
-using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace consumers
 {
@@ -13,7 +10,7 @@ namespace consumers
         static void Main()
         {
             string topic = "hello_kafka";
-
+            Console.WriteLine("Kafka consumer is running....");
             ConfluentConsume(topic);
         }
 
@@ -23,45 +20,39 @@ namespace consumers
         {
             var conf = new ConsumerConfig
             {
-                GroupId = "test-consumer",
-                BootstrapServers = "localhost:9092"
+                GroupId = "test-consumer-group",
+                BootstrapServers = "localhost:9092",
+                // Note: The AutoOffsetReset property determines the start offset in the event
+                // there are not yet any committed offsets for the consumer group for the
+                // topic/partitions of interest. By default, offsets are committed
+                // automatically, so in this example, consumption will only start from the
+                // earliest message in the topic 'my-topic' the first time you run the program.
+                AutoOffsetReset = AutoOffsetReset.Earliest
             };
 
-            using (var c = new ConsumerBuilder<Ignore, string>(conf).Build())
+            using (var consumer = new ConsumerBuilder<long, string>(conf).Build())
             {
-                var topicPartitionOffset = new TopicPartitionOffset(topic, new Partition(0), new Confluent.Kafka.Offset(0));
-
-                c.Assign(topicPartitionOffset);
-                //c.Assign(topic, 0, new Offset(200));
-                //c.Subscribe(topic);
-
+              
                 CancellationTokenSource cts = new CancellationTokenSource();
-                Console.CancelKeyPress += (_, e) =>
+                Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
+
+                consumer.Subscribe(topic);
+                Console.WriteLine("Consuming messages from topic: " + topic );
+                while (true)
                 {
-                    e.Cancel = true; // prevent the process from terminating.
-                    cts.Cancel();
-                };
-                try
-                {
-                    while (!cts.IsCancellationRequested)
+                    try
                     {
-                        var cr = c.Consume(TimeSpan.FromMilliseconds(50));
-                        if (cr != null )
-                        {
-                            Console.WriteLine($"Consumed message '{cr.Message.Value}' at: '{cr.TopicPartitionOffset}'.");
-
-                        }
-
+                        var msg = consumer.Consume(cts.Token);
+                        Console.WriteLine($"Received: '{msg.Message.Value}'");
                     }
-                }
-                catch (OperationCanceledException)
-                {
-                    // Ensure the consumer leaves the group cleanly and final offsets are committed.
-                    
-                }
-                finally
-                {
-                    c.Close();
+                    catch (ConsumeException e)
+                    {
+                        Console.WriteLine($"Consume error: {e.Error.Reason}");
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"Error: {e.Message}");
+                    }
                 }
             }
         }
