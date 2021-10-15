@@ -13,7 +13,7 @@ namespace producers
             Console.WriteLine("Hello Kafka Producers");
             var config = new ProducerConfig
             {
-                BootstrapServers = "127.0.0.1:9092"
+                BootstrapServers = "192.168.1.40:9092"
             };
 
             // Create a producer that can be used to send messages to kafka that have no key and a value of type string 
