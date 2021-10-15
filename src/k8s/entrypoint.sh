@@ -1,6 +1,8 @@
 #!/bin/bash
 
+
 NODE_ID=${HOSTNAME:6}
+echo "NODE ID: ${NODE_ID}";
 LISTENERS="PLAINTEXT://:9092,CONTROLLER://:9093"
 ADVERTISED_LISTENERS="PLAINTEXT://kafka-$NODE_ID.$SERVICE.$NAMESPACE.svc.cluster.local:9092"
 
@@ -22,6 +24,7 @@ else
     CLUSTER_ID=$(cat $SHARE_DIR/cluster_id)
 fi
 
+
 sed -e "s+^node.id=.*+node.id=$NODE_ID+" \
 -e "s+^controller.quorum.voters=.*+controller.quorum.voters=$CONTROLLER_QUORUM_VOTERS+" \
 -e "s+^listeners=.*+listeners=$LISTENERS+" \
@@ -31,5 +34,8 @@ sed -e "s+^node.id=.*+node.id=$NODE_ID+" \
 && mv server.properties.updated /opt/kafka/config/kraft/server.properties
 
 kafka-storage.sh format -t $CLUSTER_ID -c /opt/kafka/config/kraft/server.properties
+# echo "==> Setting up Kafka storage...";
+# export suuid=$(./bin/kafka-storage.sh random-uuid);
+# kafka-storage.sh format -t suuid -c /opt/kafka/config/kraft/server.properties
 
 exec kafka-server-start.sh /opt/kafka/config/kraft/server.properties
