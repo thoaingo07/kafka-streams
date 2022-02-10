@@ -9,11 +9,11 @@ namespace producers
     {
         public static async Task Main()
         {
-            string topic = "hello_kafka";
+            string topic = core.KafkaConsts.Topic;
             Console.WriteLine("Hello Kafka Producers");
             var config = new ProducerConfig
             {
-                BootstrapServers = "192.168.1.40:9092"
+                BootstrapServers = core.KafkaConsts.BootstrapServers
             };
 
             // Create a producer that can be used to send messages to kafka that have no key and a value of type string 

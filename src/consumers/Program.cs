@@ -9,19 +9,21 @@ namespace consumers
 
         static void Main()
         {
-            string topic = "hello_kafka";
+            string topic = core.KafkaConsts.Topic;
+            Console.Write("Enter your consumer group name:");
+            var groupName = Console.ReadLine();            
             Console.WriteLine("Kafka consumer is running....");
-            ConfluentConsume(topic);
+            ConfluentConsume(topic, groupName);
         }
 
 
 
-        private static void ConfluentConsume(string topic)
+        private static void ConfluentConsume(string topic, string groupName)
         {
             var conf = new ConsumerConfig
             {
-                GroupId = "test-consumer-group",
-                BootstrapServers = "192.168.1.40:9092",
+                GroupId = !string.IsNullOrWhiteSpace(groupName) ? groupName : core.KafkaConsts.ConsumerGroup1,
+                BootstrapServers = core.KafkaConsts.BootstrapServers,
                 // Note: The AutoOffsetReset property determines the start offset in the event
                 // there are not yet any committed offsets for the consumer group for the
                 // topic/partitions of interest. By default, offsets are committed
@@ -35,10 +37,8 @@ namespace consumers
 
                 CancellationTokenSource cts = new CancellationTokenSource();
                 Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
-
                 consumer.Subscribe(topic);
                 Console.WriteLine("Consuming messages from topic: " + topic);
-
                 try
                 {
                     while (true)
@@ -46,7 +46,9 @@ namespace consumers
                         try
                         {
                             var cr = consumer.Consume(cts.Token);
-                            Console.WriteLine($"Consumed message '{cr.Message.Value}' at: '{cr.TopicPartitionOffset}'.");
+                            Console.WriteLine($"[{core.KafkaConsts.ConsumerGroup1}] Consumed message '{cr.Message.Value}' at: '{cr.TopicPartitionOffset}'.");
+                            consumer.Commit(cr);
+
                         }
                         catch (ConsumeException e)
                         {
@@ -59,6 +61,8 @@ namespace consumers
                     consumer.Close();
                 }
             }
+
+
         }
     }
 }
